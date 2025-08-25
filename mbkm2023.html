@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Daftar Bahan MKBKM - Bangunemo</title>
+  <!-- Font Awesome untuk ikon -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f0f4f8;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    header img {
+      width: 60px;
+      height: 60px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      color: #1a237e;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: white;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    th, td {
+      padding: 12px;
+      border: 1px solid #ddd;
+      text-align: left;
+      color: #333;
+    }
+
+    th {
+      background: #3f51b5;
+      color: white;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f1f1f1;
+    }
+
+    tr:hover {
+      background-color: #e8eaf6;
+    }
+
+    button {
+      padding: 5px 10px;
+      margin: 2px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-size: 16px;
+    }
+
+    .controls {
+      margin-top: 15px;
+    }
+
+    input[type="text"] {
+      width: 60%;
+      padding: 7px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .fa-edit {
+      color: #2196f3;
+    }
+
+    .fa-trash {
+      color: #f44336;
+    }
+
+    button:hover .fa-edit {
+      color: #1565c0;
+    }
+
+    button:hover .fa-trash {
+      color: #c62828;
+    }
+
+    @media print {
+      .controls, .actions, input, button {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <img src="amik.png" alt="Logo AMIK" id="logo">
+  <h1>AMIK LUWUK BANGGAI - Bahan MKBKM Desa Bangunemo</h1>
+</header>
+
+<div class="controls">
+  <input type="text" id="itemInput" placeholder="Tambah bahan baru..."/>
+  <button onclick="addItem()">Tambah</button>
+  <button onclick="downloadExcel()">Cetak Excel</button>
+  <button onclick="window.print()">Print</button>
+</div>
+
+<table id="dataTable">
+  <thead>
+    <tr>
+      <th>No</th>
+      <th>Nama Bahan</th>
+      <th class="actions">Aksi</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<script>
+  let data = JSON.parse(localStorage.getItem("bahanList")) || [
+    "Kompor", "Reskuker", "Piring/gelas/Per sendokan", "Belanga", "Loyang kecil/besar",
+    "Galon Air Minum", "Beras", "Lampu", "Tikar", "Bantal", "Cokrol",
+    "Patauk Paisu", "Minyak Tanah/Korek", "Mie 1 rak/Telur 1 Rak",
+    "Sapu/Pel/Tempat Sampah", "Minyak Goreng", "Rampah Rampah(bawang merah putih)",
+    "Pisau"
+  ];
+
+  function saveData() {
+    localStorage.setItem("bahanList", JSON.stringify(data));
+  }
+
+  function renderTable() {
+    const tbody = document.querySelector("#dataTable tbody");
+    tbody.innerHTML = "";
+    data.forEach((item, index) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${index + 1}</td>
+        <td>
+          <span class="item-text">${item}</span>
+          <input type="text" class="edit-input" style="display:none;" value="${item}" />
+        </td>
+        <td class="actions">
+          <button onclick="editItem(${index}, this)"><i class="fas fa-edit"></i></button>
+          <button onclick="deleteItem(${index})"><i class="fas fa-trash"></i></button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function addItem() {
+    const input = document.getElementById("itemInput");
+    const value = input.value.trim();
+    if (value) {
+      data.push(value);
+      input.value = "";
+      saveData();
+      renderTable();
+    }
+  }
+
+  function editItem(index, btn) {
+    const row = btn.closest("tr");
+    const span = row.querySelector(".item-text");
+    const input = row.querySelector(".edit-input");
+
+    if (btn.innerHTML.includes("fa-edit")) {
+      span.style.display = "none";
+      input.style.display = "inline";
+      btn.innerHTML = '<i class="fas fa-save"></i>';
+    } else {
+      const newValue = input.value.trim();
+      if (newValue) {
+        data[index] = newValue;
+        saveData();
+        renderTable();
+      }
+    }
+  }
+
+  function deleteItem(index) {
+    if (confirm("Yakin ingin menghapus item ini?")) {
+      data.splice(index, 1);
+      saveData();
+      renderTable();
+    }
+  }
+
+  function downloadExcel() {
+    let csv = "No,Nama Bahan\n";
+    data.forEach((item, i) => {
+      csv += `${i + 1},"${item}"\n`;
+    });
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "bahan-mkbkm-bangunemo.csv";
+    link.click();
+  }
+
+  renderTable();
+</script>
+
+</body>
+</html>
